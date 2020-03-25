@@ -10,11 +10,13 @@ def TDMinMaxScaler(data):
 	ma = data.max(axis=2)
 	#print(mi.shape)
 
+
+
 	for i in range(data.shape[0]):
 		for j in range(data.shape[1]):
 			data[i][j] = (data[i][j] - mi[i][j]) / (ma[i][j] - mi[i][j] + 1e-8)
 	#data = (data - mi) / (ma - mi)
-	return data
+	return data, ma, mi
 
 class MissDataset(data.Dataset):# return (complete_data, missing_data, mask)
 
@@ -39,13 +41,13 @@ class MissDataset(data.Dataset):# return (complete_data, missing_data, mask)
 def MissDataLoader(file_path):
 	data = np.load(file_path)
 	#print('Data loading, shape :', data.shape)
+	data_m = np.ones(data.shape)
+	data_m[np.where(np.isnan(data))] = 0
 
 	data_x = data[:]
 	data_x[np.where(np.isnan(data))] = 0
 
-	data_x = TDMinMaxScaler(data_x)
+	data_x, ma, mi = TDMinMaxScaler(data_x)
 
-	data_m = np.ones(data.shape)
-	data_m[np.where(np.isnan(data))] = 0
-	return data_x, data_m
+	return data_x, data_m, ma, mi
 

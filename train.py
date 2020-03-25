@@ -38,7 +38,7 @@ parser.add_argument('--R', default=2, type=int,
 parser.add_argument('--C', default=0.2, type=float,
                     help='Probability of dropout in input layer')
 
-parser.add_argument('--epochs', default=200, type=int,
+parser.add_argument('--epochs', default=10, type=int,
                     help='Number of maximum epochs')
 parser.add_argument('--lr', default=1e-4, type=float,
                     help='Init learning rate')
@@ -96,14 +96,17 @@ def train(dataLoader, args, train_z, train_m):
 		step_loss = get_step_loss(model, train_z, train_m)
 
 		
-		loss_list.append(step_loss )
+		loss_list.append(step_loss)
 
 		#test_rmse = get_rmse(model, train_x, train_z, train_m)
 		print (epoch, 'Step loss:', step_loss)#, '  Test rmse:', test_rmse)
 		#if best_rmse > test_rmse:
 		#	best_rmse = test_rmse
 			
-		#	save(model, train_x, train_z, train_m)
+		save_path = os.path.join(args.save_folder, 'model_epoch_%d.pth' % (epoch))
+		torch.save(model.module, save_path)
+		#save(model, train_x, train_z, train_m)
+
 
 
 	#draw_curve(loss_list, 'RMSE', 'RMSE')
@@ -111,13 +114,17 @@ def train(dataLoader, args, train_z, train_m):
 	return model 
 
 def main(args):
-	train_z, train_m = MissDataLoader(args.train_path)
+	train_z, train_m, _, _ = MissDataLoader(args.train_path)
 	train_set = MissDataset(train_z, train_m)
 
 	args.N = train_z.shape[1]
 	train_loader = data.DataLoader(train_set, batch_size=args.batch_size, shuffle=args.shuffle)
 
+	if not os.path.exists(args.save_folder):
+		os.makedirs(args.save_folder)
+
 	model = train(train_loader, args, train_z, train_m)
+	torch.save(model.module, os.path.join(args.save_folder, 'final.pth'))
 
 if __name__ == '__main__':
     args = parser.parse_args()
